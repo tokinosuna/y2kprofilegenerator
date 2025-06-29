@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2K Profile Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #008080;
+            --window-bg: #C0C0C0;
+            --title-bar-color: #000080;
+            --text-color: #000000;
+            --border-light: #DFDFDF;
+            --border-dark: #808080;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%);
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+        
+        .container { display: flex; height: 100vh; gap: 20px; padding: 20px; }
+        
+        .controls {
+            width: 350px;
+            background: rgba(0,0,0,0.8);
+            border: 2px outset var(--border-light);
+            padding: 15px;
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+        
+        .controls h2 {
+            font-family: 'Press Start 2P', monospace;
+            color: #00FF00;
+            font-size: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+            border: 1px inset var(--border-dark);
+            padding: 10px;
+            background: rgba(192,192,192,0.1);
+        }
+        
+        .control-group label {
+            display: block;
+            color: #FFFFFF;
+            font-size: 14px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .control-group input, .control-group textarea {
+            width: 100%;
+            padding: 5px;
+            border: 1px inset var(--border-dark);
+            background: #FFFFFF;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+        }
+        
+        .control-group textarea { height: 60px; resize: vertical; }
+        
+        .theme-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .theme-btn {
+            padding: 8px;
+            border: 2px outset var(--border-light);
+            background: var(--window-bg);
+            font-family: 'VT323', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .theme-btn:hover { border-style: inset; }
+        .theme-btn.active { background: var(--title-bar-color); color: white; }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .export-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px outset #00FF00;
+            background: #000000;
+            color: #00FF00;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .export-btn:hover { border-style: inset; background: #003300; }
+        
+        .preview {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .window {
+            background: var(--window-bg);
+            border: 2px outset var(--border-light);
+            width: 600px;
+            min-height: 500px;
+            box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .title-bar {
+            background: var(--title-bar-color);
+            color: white;
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border-dark);
+        }
+        
+        .window-controls {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .window-control {
+            width: 16px;
+            height: 14px;
+            border: 1px outset var(--border-light);
+            background: var(--window-bg);
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .menu-bar {
+            background: var(--window-bg);
+            padding: 4px 8px;
+            border-bottom: 1px inset var(--border-dark);
+            font-size: 12px;
+        }
+        
+        .menu-bar a {
+            color: var(--text-color);
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        
+        .address-bar {
+            background: white;
+            border: 1px inset var(--border-dark);
+            margin: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-family: 'VT323', monospace;
+        }
+        
+        .content {
+            padding: 15px;
+            display: grid;
+            grid-template-areas: 
+                "pfp info"
+                "pfp extra"
+                "byf dnf"
+                "status status"
+                "lists lists";
+            grid-template-columns: 120px 1fr;
+            gap: 15px;
+            min-height: 400px;
+        }
+        
+        .pfp-area {
+            grid-area: pfp;
+            text-align: center;
+        }
+        
+        .pfp-img {
+            width: 100px;
+            height: 100px;
+            border: 2px inset var(--border-dark);
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #666;
+            margin: 0 auto 10px;
+        }
+        
+        .pfp-img img {
+            width: 96px;
+            height: 96px;
+            object-fit: cover;
+        }
+        
+        .info-area {
+            grid-area: info;
+            border: 1px inset var(--border-dark);
+            padding: 10px;
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .username {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: var(--title-bar-color);
+            margin-bottom: 8px;
+        }
+        
+        .basic-info {
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+        
+        .byf-area, .dnf-area {
+            border: 1px inset var(--border-dark);
+            padding: 10px;
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .byf-area { grid-area: byf; }
+        .dnf-area { grid-area: dnf; }
+        
+        .section-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: var(--title-bar-color);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .section-content {
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+        
+        .status-area {
+            grid-area: status;
+            border: 1px inset var(--border-dark);
+            padding: 8px;
+            background: var(--title-bar-color);
+            color: white;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        .lists-area {
+            grid-area: lists;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .list-column {
+            border: 1px inset var(--border-dark);
+            padding: 8px;
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .list-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--title-bar-color);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        
+        .list-content {
+            font-size: 11px;
+            line-height: 1.3;
+            white-space: pre-wrap;
+        }
+        
+        @media (max-width: 1024px) {
+            .container { flex-direction: column; height: auto; }
+            .controls { width: 100%; max-height: none; }
+            .window { width: 100%; max-width: 600px; }
+            .content { grid-template-columns: 100px 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-areas: 
+                    "pfp pfp"
+                    "info info"
+                    "byf byf"
+                    "dnf dnf"
+                    "status status"
+                    "lists lists";
+                grid-template-columns: 1fr;
+            }
+            .lists-area { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h2>Y2K PROFILE GENERATOR</h2>
+            
+            <div class="control-group">
+                <label>Theme:</label>
+                <div class="theme-buttons">
+                    <button class="theme-btn active" onclick="setTheme('classic')">Classic</button>
+                    <button class="theme-btn" onclick="setTheme('grape')">Grape</button>
+                    <button class="theme-btn" onclick="setTheme('vaporwave')">Vaporwave</button>
+                    <button class="theme-btn" onclick="setTheme('matrix')">Matrix</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Profile Picture:</label>
+                <input type="file" id="pfp-upload" accept="image/*" onchange="handleImageUpload(event)">
+            </div>
+            
+            <div class="control-group">
+                <label>Username:</label>
+                <input type="text" id="username" value="ynwa_txt" oninput="updatePreview()">
+            </div>
+            
+            <div class="control-group">
+                <label>Basic Info:</label>
+                <textarea id="basic-info" oninput="updatePreview()">✧ gemini | infp ✧
+age: 30 | pronouns: they/them
+location: cyberspace
+loves: retro, kpop, anime</textarea>
+            </div>
+            
+            <div class="control-group">
+                <label>About Me:</label>
+                <textarea id="about-me" oninput="updatePreview()">hey there! i'm just a person exploring the endless possibilities of the web. i love creating art, listening to music, and watching animes. currently learning html/css and dreaming of making my own website!</textarea>
+            </div>
+            
+            <div class="control-group">
+                <label>Things to Know:</label>
+                <textarea id="things-to-know" oninput="updatePreview()">• please use tone tags!
+• i'm always down to chat about beautiful things
+• my dms are open but please be respectful
+• currently obsessed with y2k aesthetics
+• love making new friends!</textarea>
+            </div>
+            
+            <div class="control-group">
+                <label>Status/Quote:</label>
+                <textarea id="status" oninput="updatePreview()">~ living in the year 2000 forever ~</textarea>
+            </div>
+            
+            <div class="control-group">
+                <label>List 1 Title:</label>
+                <input type="text" id="list1-title" value="current obsessions" oninput="updatePreview()">
+                <textarea id="list1-content" oninput="updatePreview()">⊹ retro
+⊹ anime
+⊹ kpop
+⊹ geocities archives
+⊹ stardew valley</textarea>
+            </div>
+            
+            <div class="control-group">
+                <label>List 2 Title:</label>
+                <input type="text" id="list2-title" value="fave websites" oninput="updatePreview()">
+                <textarea id="list2-content" oninput="updatePreview()">★ neocities.org
+★ archive.org  
+★ ghibli.jp
+★ windows93.net
+★ nicovideo.jp</textarea>
+            </div>
+            
+            <div class="control-group">
+                <label>List 3 Title:</label>
+                <input type="text" id="list3-title" value="music rotation" oninput="updatePreview()">
+                <textarea id="list3-content" oninput="updatePreview()">♪ instant crush
+♪ 0X1=LOVESONG
+♪ spring day 
+♪ fukai mori
+♪ gekkouka</textarea>
+            </div>
+            
+            <div class="export-buttons">
+                <button class="export-btn" onclick="exportProfile('png')">EXPORT PNG</button>
+            </div>
+        </div>
+        
+        <div class="preview">
+            <div class="window" id="profile-output">
+                <div class="title-bar">
+                    <span>Y2K Profile Generator</span>
+                    <div class="window-controls">
+                        <div class="window-control">_</div>
+                        <div class="window-control">□</div>
+                        <div class="window-control">×</div>
+                    </div>
+                </div>
+                <div class="menu-bar">
+                    <a href="#"><u>F</u>ile</a>
+                    <a href="#"><u>E</u>dit</a>
+                    <a href="#"><u>V</u>iew</a>
+                    <a href="#"><u>H</u>elp</a>
+                </div>
+                <div class="address-bar">https://y2kprofilegenerator.com/users/profile</div>
+                <div class="content">
+                    <div class="pfp-area">
+                        <div class="pfp-img" id="pfp-display">
+                            <span>no image</span>
+                        </div>
+                    </div>
+                    <div class="info-area">
+                        <div class="username" id="display-username">pixel_surfer</div>
+                        <div class="basic-info" id="display-basic-info">✧ gemini | infp ✧
+age: 30 | pronouns: they/them
+location: cyberspace
+loves: retro tech, pixel art</div>
+                    </div>
+                    <div class="byf-area">
+                        <div class="section-title">About Me</div>
+                        <div class="section-content" id="display-about-me">hey there! i'm just a digital wanderer exploring the endless possibilities of the web. i love creating pixel art, collecting vintage computers, and vibing to synthwave music. currently learning html/css and dreaming of making my own website!</div>
+                    </div>
+                    <div class="dnf-area">
+                        <div class="section-title">Things to Know</div>
+                        <div class="section-content" id="display-things-to-know">• please use tone tags!
+• i'm always down to chat about retro tech
+• my dms are open but please be respectful
+• currently obsessed with y2k aesthetics
+• love making new internet friends!</div>
+                    </div>
+                    <div class="status-area" id="display-status">~ living in the year 2000 forever ~</div>
+                    <div class="lists-area">
+                        <div class="list-column">
+                            <div class="list-title" id="display-list1-title">current obsessions</div>
+                            <div class="list-content" id="display-list1-content">⊹ retro computers
+⊹ pixel art tutorials  
+⊹ synthwave playlists
+⊹ geocities archives
+⊹ tamagotchis</div>
+                        </div>
+                        <div class="list-column">
+                            <div class="list-title" id="display-list2-title">fave websites</div>
+                            <div class="list-content" id="display-list2-content">★ neocities.org
+★ archive.org  
+★ poolside.fm
+★ windows93.net
+★ sadgrl.online</div>
+                        </div>
+                        <div class="list-column">
+                            <div class="list-title" id="display-list3-title">music rotation</div>
+                            <div class="list-content" id="display-list3-content">♪ carpenter brut
+♪ perturbator
+♪ dance with the dead  
+♪ power trip
+♪ lazerhawk</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themes = {
+            classic: { bg: '#008080', window: '#C0C0C0', titleBar: '#000080', text: '#000000' },
+            grape: { bg: '#4A4156', window: '#D6D5E0', titleBar: '#584883', text: '#000000' },
+            vaporwave: { bg: '#FF69B4', window: '#FFC0CB', titleBar: '#008080', text: '#000000' },
+            matrix: { bg: '#000000', window: '#000000', titleBar: '#003300', text: '#00FF00' }
+        };
+        
+        let currentTheme = 'classic';
+        
+        function setTheme(themeName) {
+            currentTheme = themeName;
+            const theme = themes[themeName];
+            const root = document.documentElement;
+            
+            root.style.setProperty('--bg-color', theme.bg);
+            root.style.setProperty('--window-bg', theme.window);
+            root.style.setProperty('--title-bar-color', theme.titleBar);
+            root.style.setProperty('--text-color', theme.text);
+            
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        function updatePreview() {
+            document.getElementById('display-username').textContent = document.getElementById('username').value;
+            document.getElementById('display-basic-info').textContent = document.getElementById('basic-info').value;
+            document.getElementById('display-about-me').textContent = document.getElementById('about-me').value;
+            document.getElementById('display-things-to-know').textContent = document.getElementById('things-to-know').value;
+            document.getElementById('display-status').textContent = document.getElementById('status').value;
+            document.getElementById('display-list1-title').textContent = document.getElementById('list1-title').value;
+            document.getElementById('display-list1-content').textContent = document.getElementById('list1-content').value;
+            document.getElementById('display-list2-title').textContent = document.getElementById('list2-title').value;
+            document.getElementById('display-list2-content').textContent = document.getElementById('list2-content').value;
+            document.getElementById('display-list3-title').textContent = document.getElementById('list3-title').value;
+            document.getElementById('display-list3-content').textContent = document.getElementById('list3-content').value;
+        }
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const pfpDisplay = document.getElementById('pfp-display');
+                    pfpDisplay.innerHTML = `<img src="${e.target.result}" alt="Profile Picture">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        async function exportProfile(format) {
+            try {
+                const element = document.getElementById('profile-output');
+                const theme = themes[currentTheme];
+                
+                const canvas = await html2canvas(element, {
+                    backgroundColor: null,
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false
+                });
+                
+                const exportHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2K Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-color: ${theme.bg}; --window-bg: ${theme.window}; --title-bar-color: ${theme.titleBar}; --text-color: ${theme.text}; --border-light: #DFDFDF; --border-dark: #808080; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'VT323', monospace; background-color: var(--bg-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%), linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%); }
+        .window { background: var(--window-bg); border: 2px outset var(--border-light); width: 600px; min-height: 500px; box-shadow: 4px 4px 8px rgba(0,0,0,0.3); }
+        .title-bar { background: var(--title-bar-color); color: white; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px solid var(--border-dark); }
+        .window-controls { display: flex; gap: 2px; }
+        .window-control { width: 16px; height: 14px; border: 1px outset var(--border-light); background: var(--window-bg); font-size: 8px; display: flex; align-items: center; justify-content: center; }
+        .menu-bar { background: var(--window-bg); padding: 4px 8px; border-bottom: 1px inset var(--border-dark); font-size: 12px; }
+        .menu-bar a { color: var(--text-color); text-decoration: none; margin-right: 15px; }
+        .address-bar { background: white; border: 1px inset var(--border-dark); margin: 4px; padding: 2px 6px; font-size: 11px; font-family: 'VT323', monospace; }
+        .content { padding: 15px; display: grid; grid-template-areas: "pfp info" "pfp extra" "byf dnf" "status status" "lists lists"; grid-template-columns: 120px 1fr; gap: 15px; min-height: 400px; }
+        .pfp-area { grid-area: pfp; text-align: center; }
+        .pfp-img { width: 100px; height: 100px; border: 2px inset var(--border-dark); background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; margin: 0 auto 10px; }
+        .pfp-img img { width: 96px; height: 96px; object-fit: cover; }
+        .info-area { grid-area: info; border: 1px inset var(--border-dark); padding: 10px; background: rgba(255,255,255,0.5); }
+        .username { font-family: 'Press Start 2P', monospace; font-size: 14px; color: var(--title-bar-color); margin-bottom: 8px; }
+        .basic-info { font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
+        .byf-area, .dnf-area { border: 1px inset var(--border-dark); padding: 10px; background: rgba(255,255,255,0.5); }
+        .byf-area { grid-area: byf; }
+        .dnf-area { grid-area: dnf; }
+        .section-title { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--title-bar-color); margin-bottom: 8px; text-transform: uppercase; }
+        .section-content { font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
+        .status-area { grid-area: status; border: 1px inset var(--border-dark); padding: 8px; background: var(--title-bar-color); color: white; text-align: center; font-style: italic; }
+        .lists-area { grid-area: lists; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .list-column { border: 1px inset var(--border-dark); padding: 8px; background: rgba(255,255,255,0.5); }
+        .list-title { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--title-bar-color); margin-bottom: 6px; text-transform: uppercase; }
+        .list-content { font-size: 11px; line-height: 1.3; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    ${element.outerHTML}
+</body>
+</html>`;
+                
+                const link = document.createElement('a');
+                if (format === 'png') {
+                    link.download = 'y2k-profile.png';
+                    link.href = canvas.toDataURL('image/png');
+                }
+                link.click();
+                
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            }
+        }
+        
+        // Initialize
+        updatePreview();
+    </script>
+</body>
+</html>
